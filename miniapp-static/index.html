@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Quiz Universe</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root { --bg: var(--tg-theme-bg-color, #1a1a2e); --text: var(--tg-theme-text-color, #eee); --hint: var(--tg-theme-hint-color, #aaa); --btn: var(--tg-theme-button-color, #6c5ce7); --btn-text: var(--tg-theme-button-text-color, #fff); --sec: var(--tg-theme-secondary-bg-color, #16213e); }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 16px; }
+    .container { max-width: 480px; margin: 0 auto; }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    .subtitle { color: var(--hint); font-size: 14px; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .cat-btn { background: var(--sec); border: none; border-radius: 12px; padding: 16px 12px; color: var(--text); font-size: 15px; cursor: pointer; text-align: left; transition: transform .1s, background .2s; }
+    .cat-btn:active { transform: scale(0.97); }
+    .cat-btn .emoji { font-size: 24px; display: block; margin-bottom: 6px; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .question-card { background: var(--sec); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+    .q-num { color: var(--hint); font-size: 13px; margin-bottom: 8px; }
+    .q-text { font-size: 17px; font-weight: 600; line-height: 1.4; margin-bottom: 16px; }
+    .option-btn { width: 100%; background: var(--bg); border: 2px solid var(--sec); border-radius: 10px; padding: 14px; margin-bottom: 8px; color: var(--text); font-size: 15px; cursor: pointer; text-align: left; transition: all .15s; }
+    .option-btn:active { transform: scale(0.98); }
+    .option-btn.correct { border-color: #00b894; background: rgba(0,184,148,.15); }
+    .option-btn.wrong { border-color: #d63031; background: rgba(214,48,49,.15); }
+    .option-btn.disabled { opacity: .6; pointer-events: none; }
+    .fact { background: var(--sec); border-radius: 12px; padding: 14px; margin-top: 12px; font-size: 14px; color: var(--hint); display: none; }
+    .fact.show { display: block; }
+    .streak { color: #fdcb6e; font-weight: 600; }
+    .result { text-align: center; padding: 20px; }
+    .result .score { font-size: 48px; font-weight: 700; margin: 16px 0; }
+    .result .rank { font-size: 20px; margin-bottom: 8px; }
+    .result .stats { color: var(--hint); margin-bottom: 20px; }
+    .btn { background: var(--btn); color: var(--btn-text); border: none; border-radius: 10px; padding: 14px 24px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px; }
+    .btn:active { transform: scale(0.98); }
+    .btn.secondary { background: var(--sec); color: var(--text); }
+    .top-list { list-style: none; }
+    .top-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--sec); font-size: 14px; gap: 8px; }
+    .loading { text-align: center; padding: 40px; color: var(--hint); }
+    .error { color: #d63031; text-align: center; padding: 20px; }
+    .note { color: var(--hint); font-size: 12px; text-align: center; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="home" class="screen active">
+      <h1>🧠 Quiz Universe</h1>
+      <p class="subtitle">20 квизов по вселенным Marvel, DC и Аниме</p>
+      <div class="grid" id="categories"></div>
+      <button class="btn secondary" onclick="showStats()">📊 Моя статистика</button>
+      <p class="note">Статистика сохраняется на этом устройстве.</p>
+    </div>
+
+    <div id="quiz" class="screen">
+      <div class="question-card">
+        <div class="q-num" id="qNum"></div>
+        <div class="q-text" id="qText"></div>
+        <div id="options"></div>
+      </div>
+      <div class="fact" id="fact"></div>
+      <div id="streakInfo" style="text-align:center;margin-top:8px;"></div>
+    </div>
+
+    <div id="result" class="screen">
+      <div class="result">
+        <div class="rank" id="resultRank"></div>
+        <div class="score" id="resultScore"></div>
+        <div class="stats" id="resultStats"></div>
+        <button class="btn" onclick="goHome()">🏠 В меню</button>
+        <button class="btn secondary" onclick="shareResult()">📤 Поделиться</button>
+      </div>
+    </div>
+
+    <div id="stats" class="screen">
+      <h1>📊 Статистика</h1>
+      <div id="statsContent" class="loading">Загрузка...</div>
+      <button class="btn secondary" onclick="goHome()" style="margin-top:20px;">🏠 Назад</button>
+    </div>
+  </div>
+
+  <script>
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) { tg.ready(); tg.expand(); }
+
+    const userId = tg?.initDataUnsafe?.user?.id || 'local';
+    let currentPack = null, currentQuestion = 0, score = 0, streak = 0, bestStreak = 0, correctCount = 0, packs = {}, lastResult = null;
+
+    function statsKey(packKey) { return `quiz_stats_${userId}_${packKey}`; }
+    function loadLocal(packKey) { try { return JSON.parse(localStorage.getItem(statsKey(packKey))||'{}'); } catch { return {}; } }
+    function saveLocal(packKey, u) { try { localStorage.setItem(statsKey(packKey), JSON.stringify(u)); } catch {} }
+
+    async function loadPacks() {
+      try {
+        const res = await fetch('./packs.json', { cache: 'no-store' });
+        packs = await res.json();
+        renderCategories();
+      } catch (e) {
+        document.getElementById('categories').innerHTML = '<div class="error">Не удалось загрузить packs.json</div>';
+      }
+    }
+
+    function renderCategories() {
+      const grid = document.getElementById('categories');
+      grid.innerHTML = '';
+      Object.values(packs).forEach((p) => {
+        const btn = document.createElement('button');
+        btn.className = 'cat-btn';
+        btn.innerHTML = `<span class="emoji">${p.emoji}</span>${p.title}`;
+        btn.onclick = () => startQuiz(p.key);
+        grid.appendChild(btn);
+      });
+    }
+
+    async function startQuiz(packKey) {
+      currentPack = packs[packKey];
+      currentQuestion = 0; score = 0; streak = 0; bestStreak = 0; correctCount = 0;
+      showScreen('quiz');
+      await loadQuestion();
+    }
+
+    async function loadQuestion() {
+      if (currentQuestion >= currentPack.questions.length) { showResult(); return; }
+      const q = currentPack.questions[currentQuestion];
+      document.getElementById('qNum').textContent = `Вопрос ${currentQuestion + 1}/${currentPack.questions.length}`;
+      document.getElementById('qText').textContent = q.q;
+      document.getElementById('fact').classList.remove('show');
+      document.getElementById('streakInfo').innerHTML = streak >= 2 ? `<span class="streak">🔥 Серия: ${streak}</span>` : '';
+      const opts = document.getElementById('options');
+      opts.innerHTML = '';
+      q.options.forEach((o, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.textContent = o;
+        btn.onclick = () => answer(i);
+        opts.appendChild(btn);
+      });
+    }
+
+    async function answer(idx) {
+      const q = currentPack.questions[currentQuestion];
+      const picked = q.options[idx];
+      const buttons = document.querySelectorAll('.option-btn');
+      buttons.forEach((b) => b.classList.add('disabled'));
+      const correct = picked.toLowerCase() === q.answer.toLowerCase();
+      const gained = correct ? (streak >= 2 ? 3 : 2) : 0;
+      buttons[idx].classList.add(correct ? 'correct' : 'wrong');
+      if (!correct) {
+        const ci = q.options.findIndex((o) => o.toLowerCase() === q.answer.toLowerCase());
+        if (ci >= 0) buttons[ci].classList.add('correct');
+      }
+      if (correct) { score += gained; streak += 1; correctCount += 1; bestStreak = Math.max(bestStreak, streak); }
+      else { streak = 0; }
+      document.getElementById('fact').textContent = '💡 ' + q.fact;
+      document.getElementById('fact').classList.add('show');
+      setTimeout(() => { currentQuestion += 1; loadQuestion(); }, 1200);
+    }
+
+    function showResult() {
+      const max = currentPack.questions.length * 3;
+      const ratio = score / max;
+      const rank =
+        ratio >= 0.9 ? currentPack.ranks[0] :
+        ratio >= 0.7 ? currentPack.ranks[1] :
+        ratio >= 0.45 ? currentPack.ranks[2] :
+        ratio >= 0.2 ? currentPack.ranks[3] : currentPack.ranks[4];
+      document.getElementById('resultRank').textContent = `${rank.emoji} ${rank.title}`;
+      document.getElementById('resultScore').textContent = `${score} / ${max}`;
+      document.getElementById('resultStats').textContent = `Верно: ${correctCount}/${currentPack.questions.length} | Лучшая серия: ${bestStreak}`;
+      lastResult = { pack: currentPack.title, score, max, rank: rank.title };
+      const u = loadLocal(currentPack.key);
+      u.points = (u.points || 0) + score;
+      u.games = (u.games || 0) + 1;
+      u.bestStreak = Math.max(u.bestStreak || 0, bestStreak);
+      saveLocal(currentPack.key, u);
+      showScreen('result');
+    }
+
+    function showStats() {
+      showScreen('stats');
+      let html = '';
+      const cats = [];
+      Object.values(packs).forEach((p) => {
+        const u = loadLocal(p.key);
+        if (u.games > 0) cats.push({ ...p, ...u });
+      });
+      if (cats.length) {
+        html += '<ul class="top-list">';
+        cats.forEach((c) => { html += `<li><span>${c.emoji} ${c.title}</span><span><b>${c.points||0}</b> очк. (${c.games||0} игр)</span></li>`; });
+        html += '</ul>';
+      } else {
+        html = '<p style="color:var(--hint)">Ещё не играли. Начните квиз!</p>';
+      }
+      document.getElementById('statsContent').innerHTML = html;
+    }
+
+    function shareResult() {
+      if (!lastResult) return;
+      const text = `Я набрал ${lastResult.score} очк. в квизе «${lastResult.pack}» — ${lastResult.rank}! Попробуй и ты:`;
+      const url = tg?.initDataUnsafe?.start_param ? '' : window.location.href;
+      if (tg) tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text));
+      else if (navigator.share) navigator.share({ title: 'Quiz Universe', text, url }).catch(()=>{});
+      else alert(text);
+    }
+
+    function goHome() { showScreen('home'); }
+    function showScreen(name) { document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active')); document.getElementById(name).classList.add('active'); }
+    loadPacks();
+  </script>
+</body>
+</html>

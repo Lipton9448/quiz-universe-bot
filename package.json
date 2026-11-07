@@ -9,6 +9,7 @@
   },
   "scripts": {
     "start": "node src/index.js",
+    "start:miniapp": "node miniapp/server.js",
     "bot": "node src/run-one.js",
     "validate": "node scripts/validate.js",
     "smoke": "node scripts/smoke.js",
@@ -17,5 +18,8 @@
   },
   "dependencies": {
     "node-telegram-bot-api": "^0.66.0"
+  },
+  "devDependencies": {
+    "@flydotio/dockerfile": "^0.7.15"
   }
 }
