@@ -1,0 +1,5 @@
+{
+  "polling": { "interval": 400, "autoRetry": true },
+  "leaderboardFile": "state",
+  "defaultTopN": 10
+}

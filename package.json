@@ -1,0 +1,21 @@
+{
+  "name": "quiz-bots",
+  "version": "1.0.0",
+  "private": true,
+  "description": "20 Telegram quiz bots (Marvel, DC, anime) with leaderboard",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "bot": "node src/run-one.js",
+    "validate": "node scripts/validate.js",
+    "smoke": "node scripts/smoke.js",
+    "simulate": "node scripts/simulate.js",
+    "test": "node scripts/validate.js && node scripts/smoke.js && node scripts/simulate.js"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.66.0"
+  }
+}
