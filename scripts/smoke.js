@@ -13,12 +13,7 @@ assert.strictEqual(checkAnswer('Тор', 'Локи'), false);
 assert.strictEqual(checkAnswer('Конохагакуре', 'Коноха'), true);
 
 const keys = Object.keys(packs);
-assert.strictEqual(keys.length, 23, `ожидалось 23 паков, найдено ${keys.length}`);
-
-// Уровни сложности должны присутствовать
-for (const lvl of ['bronze', 'silver', 'gold']) {
-  assert.ok(packs[lvl], `нет пака уровня ${lvl}`);
-}
+assert.strictEqual(keys.length, 20, `ожидалось 20 паков, найдено ${keys.length}`);
 
 for (const key of keys) {
   const p = packs[key];
@@ -45,4 +40,4 @@ assert.strictEqual(leaderboard.userPlace(reloaded.get(), data), 1);
 fs.unlinkSync(reloaded.file);
 try { fs.rmdirSync(path.join(__dirname, '..', 'state')); } catch (e) {}
 
-console.log('✅ Smoke-тест пройден: 23 пака, ответы, хранилище, рейтинг');
+console.log('✅ Smoke-тест пройден: 20 паков, ответы, хранилище, рейтинг');

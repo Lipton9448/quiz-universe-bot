@@ -1,7 +1,7 @@
 'use strict';
 // Гибридное хранилище: локальные файлы (быстро) + GitHub как постоянный бэкап.
 // Render Free стирает state/ при каждом деплое, поэтому после каждой игры
-// state/ коммитится в приватную ветку репо, а при старте — восстанавливается.
+// стейт коммитится в отдельную ветку, а при старте — восстанавливается.
 
 const fs = require('fs');
 const path = require('path');
@@ -48,11 +48,25 @@ function ghReq(method, apiPath, body) {
 }
 
 function b64(obj) {
-  return Buffer.from(JSON.stringify(obj, null, 2), 'utf8').toString('base64');
+  return Buffer.from(typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2), 'utf8').toString('base64');
 }
 
 function unb64(str) {
   return Buffer.from(str, 'base64').toString('utf8');
+}
+
+async function ensureBranch() {
+  try {
+    await ghReq('GET', `/repos/${GH.owner}/${GH.repo}/branches/${GH.branch}`);
+  } catch (e) {
+    // ветки нет — создаём от main
+    const main = await ghReq('GET', `/repos/${GH.owner}/${GH.repo}/branches/main`);
+    await ghReq('POST', `/repos/${GH.owner}/${GH.repo}/git/refs`, {
+      ref: `refs/heads/${GH.branch}`,
+      sha: main.commit.sha
+    });
+    console.log(`[state] branch ${GH.branch} created`);
+  }
 }
 
 async function pullState() {
@@ -62,12 +76,9 @@ async function pullState() {
     for (const item of Array.isArray(res) ? res : []) {
       if (!item.name.endsWith('.json')) continue;
       const target = path.join(STATE_DIR, item.name);
-      const local = safeRead(target);
       const remote = unb64(item.content);
-      if (local !== remote) {
-        fs.writeFileSync(target, remote, 'utf8');
-        console.log(`[state] restored ${item.name} from GitHub`);
-      }
+      fs.writeFileSync(target, remote, 'utf8');
+      console.log(`[state] restored ${item.name} from GitHub`);
     }
   } catch (e) {
     console.error('[state] pull failed:', e.message);
@@ -84,26 +95,20 @@ async function pushState() {
       try {
         const meta = await ghReq('GET', `/repos/${GH.owner}/${GH.repo}/contents/state/${name}?ref=${GH.branch}`);
         sha = meta.sha;
+        if (unb64(meta.content) === local) continue;
       } catch (e) {
-        sha = undefined; // файл ещё не создан
+        sha = undefined;
       }
-      const remote = sha ? (unb64((await ghReq('GET', `/repos/${GH.owner}/${GH.repo}/contents/state/${name}?ref=${GH.branch}`)).content)) : null;
-      if (remote === local) continue; // нет изменений
       await ghReq('PUT', `/repos/${GH.owner}/${GH.repo}/contents/state/${name}`, {
         message: `state: ${name}`,
-        content: b64(JSON.parse(local)),
+        content: b64(local),
         branch: GH.branch,
         ...(sha ? { sha } : {})
       });
-      console.log(`[state] pushed ${name} to GitHub`);
     }
   } catch (e) {
     console.error('[state] push failed:', e.message);
   }
-}
-
-function safeRead(file) {
-  try { return fs.readFileSync(file, 'utf8'); } catch (e) { return null; }
 }
 
 function stateFile(packKey) {
@@ -121,10 +126,10 @@ function loadUsers(userData, packKey) {
     users = {};
   }
 
-  const key = String(userData.id);
+  const key = String(userData.id || 0);
   if (!users[key]) {
     users[key] = {
-      id: userData.id,
+      id: userData.id || 0,
       username: userData.username || '',
       first_name: userData.first_name || '',
       points: 0,
@@ -139,7 +144,6 @@ function loadUsers(userData, packKey) {
   let saveTimer = null;
   const save = () => {
     fs.writeFileSync(file, JSON.stringify(users, null, 2));
-    // дебаунс push в GitHub: не чаще раза в 30 сек
     if (GH.enabled) {
       clearTimeout(saveTimer);
       saveTimer = setTimeout(pushState, 30 * 1000);
@@ -156,11 +160,11 @@ function loadUsers(userData, packKey) {
 
 function initGithub() {
   if (!GH.token) {
-    console.log('[state] GH_TOKEN не задан — стейт только локально (сбросится при деплое)');
+    console.log('[state] GH_TOKEN отсутствует — статистика только локально (сбрасывается при деплое)');
     return;
   }
   GH.enabled = true;
   console.log(`[state] GitHub storage: ${GH.owner}/${GH.repo}@${GH.branch}`);
 }
 
-module.exports = { loadUsers, pullState, pushState, initGithub, GH };
+module.exports = { loadUsers, pullState, pushState, ensureBranch, initGithub, GH };

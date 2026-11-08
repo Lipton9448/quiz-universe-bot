@@ -1,13 +1,11 @@
 'use strict';
-// HTTP API для Mini App + health. Тот же стейт, что и у бота:
-// /api/stats, /api/top, /api/result — единая статистика бот = Mini App.
+// HTTP API для Mini App + health — единая статистика бот = Mini App.
 
 const http = require('http');
 const packs = require('../packs/index.js');
 const storage = require('./storage');
 const leaderboard = require('./leaderboard');
-const { checkAnswer } = require('./answer-check');
-const { rankFor, nextRank, RANKS } = require('./ranks');
+const { rankFor, nextRank } = require('./ranks');
 
 const TOPN = 10;
 
@@ -38,23 +36,12 @@ function createServer() {
 
     if (req.url === '/health') { json(res, 200, { status: 'ok' }); return; }
 
-    if (req.url === '/api/packs') {
-      const data = {};
-      for (const [k, p] of Object.entries(packs)) {
-        data[k] = { key: p.key, title: p.title, emoji: p.emoji, tagline: p.tagline };
-      }
-      json(res, 200, data);
-      return;
-    }
-
     if (req.url.startsWith('/api/stats')) {
       const url = new URL(req.url, 'http://x');
       const userId = url.searchParams.get('userId');
       if (!userId) { json(res, 400, { error: 'userId required' }); return; }
       const categories = [];
-      let totalGames = 0;
-      let totalPoints = 0;
-      let bestStreak = 0;
+      let totalGames = 0, totalPoints = 0, bestStreak = 0;
       for (const [k, p] of Object.entries(packs)) {
         const st = storage.loadUsers({ id: userId }, k);
         const u = st.get();
@@ -68,14 +55,19 @@ function createServer() {
           bestStreak = Math.max(bestStreak, u.best_streak || 0);
         }
       }
-      const rank = rankFor(totalPoints);
-      const next = nextRank(totalPoints);
+      const g = storage.loadUsers({ id: userId }, 'global').get() || {};
+      const rank = rankFor(g.points || totalPoints || 0);
+      const next = nextRank(g.points || totalPoints || 0);
       json(res, 200, {
         userId: Number(userId),
-        total: { points: totalPoints, games: totalGames, best_streak: bestStreak },
+        total: { points: g.points || 0, games: g.games || 0, best_streak: g.best_streak || bestStreak || 0 },
         rank: { title: rank.title, emoji: rank.emoji, key: rank.key },
-        next_rank: next ? { title: next.title, emoji: next.emoji, need: next.min - totalPoints } : null,
-        categories
+        next_rank: next ? { title: next.title, emoji: next.emoji, need: next.min - (g.points || 0) } : null,
+        categories,
+        place: (() => {
+          const data = storage.loadUsers({ id: userId }, 'global').getData();
+          return leaderboard.userPlace(g, data);
+        })()
       });
       return;
     }
@@ -92,7 +84,6 @@ function createServer() {
         .map((u, i) => ({
           place: i + 1,
           name: leaderboard.displayName(u),
-          username: u.username || '',
           points: u.points || 0,
           games: u.games || 0
         }));
@@ -103,19 +94,19 @@ function createServer() {
     if (req.url === '/api/result' && req.method === 'POST') {
       const body = await readBody(req);
       if (!body || !body.userId || !body.packKey) { json(res, 400, { error: 'bad request' }); return; }
-      const pack = packs[body.packKey];
-      if (!pack) { json(res, 404, { error: 'unknown pack' }); return; }
+      if (!packs[body.packKey]) { json(res, 404, { error: 'unknown pack' }); return; }
 
-      const st = storage.loadUsers({ id: body.userId, username: body.username, first_name: body.userName }, body.packKey);
-      const globalSt = storage.loadUsers({ id: body.userId, username: body.username, first_name: body.userName }, 'global');
+      const src = { id: body.userId, username: body.username || '', first_name: body.userName || '' };
+
+      const st = storage.loadUsers(src, body.packKey);
       const u = st.get();
-      const g = globalSt.get();
       u.points = (u.points || 0) + (body.score || 0);
       u.games = (u.games || 0) + 1;
       u.best_streak = Math.max(u.best_streak || 0, body.bestStreak || 0);
       st.save();
 
-      // аналогично для глобального ранга
+      const globalSt = storage.loadUsers(src, 'global');
+      const g = globalSt.get();
       g.points = (g.points || 0) + (body.score || 0);
       g.games = (g.games || 0) + 1;
       g.best_streak = Math.max(g.best_streak || 0, body.bestStreak || 0);
@@ -132,14 +123,8 @@ function createServer() {
       return;
     }
 
-    if (req.url === '/api/all' ) {
-      // Для отладки: весь стейт (приватный, без sutочув.). Из соображений простоты отдаём только топы.
-      json(res, 200, { ok: true });
-      return;
-    }
-
     json(res, 404, { error: 'not found' });
   });
 }
 
-module.exports = { createServer, RANKS };
+module.exports = { createServer };

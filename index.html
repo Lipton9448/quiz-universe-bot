@@ -23,13 +23,12 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: radial-gradient(900px 500px at 50% -20%, #2a2560 0%, var(--bg) 65%) fixed;
-      color: var(--text); min-height: 100vh; padding-bottom: 76px;
+      color: var(--text); min-height: 100vh; padding-bottom: 78px;
     }
     .container { max-width: 500px; margin: 0 auto; padding: 16px; }
     h1 { font-size: 22px; }
     .subtitle { color: var(--hint); font-size: 13px; margin-top: 2px; }
 
-    /* ==== Tab bar ==== */
     .tabbar {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
       display: flex; background: rgba(15,15,30,.92); backdrop-filter: blur(10px);
@@ -39,57 +38,61 @@
     .tab {
       flex: 1; padding: 10px 4px 8px; text-align: center; cursor: pointer;
       color: var(--hint); font-size: 11px; font-weight: 600; user-select: none;
-      transition: color .15s;
     }
-    .tab .ic { display: block; font-size: 21px; margin-bottom: 2px; filter: grayscale(1) opacity(.7); transition: filter .15s, transform .15s; }
+    .tab .ic { display: block; font-size: 21px; margin-bottom: 2px; filter: grayscale(1) opacity(.7); transition: filter .15s; }
     .tab.active { color: var(--purple-2); }
-    .tab.active .ic { filter: none; transform: scale(1.08); }
+    .tab.active .ic { filter: none; }
 
     .screen { display: none; }
     .screen.active { display: block; animation: fade .2s ease; }
     @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-    /* ==== Category cards with cover art ==== */
+    /* ===== Category cards with real cover images ===== */
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
     .cat-btn {
-      position: relative; overflow: hidden; height: 108px;
+      position: relative; overflow: hidden; height: 112px;
       border-radius: 16px; border: 1px solid rgba(160,150,255,.15);
-      cursor: pointer; text-align: left;
-      display: flex; align-items: flex-end;
+      cursor: pointer; text-align: left; padding: 0;
       box-shadow: 0 4px 18px rgba(0,0,0,.35);
       transition: transform .1s, border-color .2s;
     }
     .cat-btn:active { transform: scale(0.97); border-color: var(--purple); }
-    .cat-btn .cover {
+    .cat-btn img.cover {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    .cat-btn .fallback {
       position: absolute; inset: 0;
+      background: linear-gradient(160deg, #2a2560, #17123a);
       display: flex; align-items: center; justify-content: center;
-      font-size: 44px; text-shadow: 0 4px 20px rgba(0,0,0,.6);
+      font-size: 44px;
     }
     .cat-btn .overlay {
       position: absolute; inset: 0;
-      background: linear-gradient(180deg, transparent 30%, rgba(10,10,24,.92) 85%);
+      background: linear-gradient(180deg, rgba(10,10,24,.15) 25%, rgba(10,10,24,.94) 88%);
     }
     .cat-btn .label {
-      position: relative; padding: 10px 12px; width: 100%;
-      font-size: 14px; font-weight: 700; line-height: 1.25;
-      display: flex; align-items: center; gap: 6px;
+      position: absolute; bottom: 0; left: 0; right: 0; padding: 10px 12px;
+      font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 6px;
+      text-shadow: 0 2px 6px rgba(0,0,0,.8);
     }
-    .cat-btn .mini-rank {
-      margin-left: auto; font-size: 11px; font-weight: 700;
-      background: rgba(255,255,255,.14); border-radius: 999px; padding: 2px 8px;
-    }
-    .cat-btn.gold { border-color: rgba(255,201,60,.4); }
-    .cat-btn.silver { border-color: rgba(192,200,216,.35); }
-    .cat-btn.bronze { border-color: rgba(208,136,80,.4); }
-    .cat-btn .lvl-tag {
-      position: absolute; top: 8px; left: 8px; z-index: 2;
-      font-size: 10px; font-weight: 800; letter-spacing: .5px;
-      padding: 3px 7px; border-radius: 999px;
+    .cat-btn .rank-badge {
+      position: absolute; top: 8px; right: 8px; z-index: 2;
+      font-size: 10.5px; font-weight: 800;
       background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+      padding: 3px 8px; border-radius: 999px; color: var(--gold);
     }
-    .lvl-tag.b { color: var(--bronze); } .lvl-tag.s { color: var(--silver); } .lvl-tag.g { color: var(--gold); }
 
-    /* ==== Question card ==== */
+    .seg { display: flex; gap: 6px; margin: 12px 0; flex-wrap: wrap; }
+    .seg button {
+      background: var(--sec); color: var(--hint); border: 1px solid rgba(160,150,255,.15);
+      border-radius: 999px; padding: 7px 13px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    }
+    .seg button.active { color: #fff; background: linear-gradient(135deg, var(--purple), #9b7bff); border-color: transparent; }
+    .seg button[data-f="marvel"]::before { content: ''; }
+    .seg button.hidden { display: none; }
+
+    /* ===== Question ===== */
     .progress { height: 6px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; margin: 14px 0 12px; }
     .progress > div { height: 100%; background: linear-gradient(90deg, var(--purple), var(--purple-2)); width: 0; transition: width .3s; }
     .question-card {
@@ -99,7 +102,6 @@
       box-shadow: 0 8px 28px rgba(0,0,0,.35);
     }
     .q-num { color: var(--hint); font-size: 13px; margin-bottom: 8px; display: flex; justify-content: space-between; }
-    .q-level { font-weight: 700; }
     .q-text { font-size: 17px; font-weight: 600; line-height: 1.45; }
     .option-btn {
       width: 100%; background: rgba(15,15,30,.6);
@@ -116,7 +118,7 @@
       display: none; margin-top: 10px;
       background: rgba(123,92,255,.08); border: 1px solid rgba(123,92,255,.25);
       border-radius: 12px; padding: 12px 14px;
-      font-size: 13.5px; line-height: 1.55; color: var(--text);
+      font-size: 13.5px; line-height: 1.6; color: var(--text);
     }
     .fact.show { display: block; animation: fade .25s ease; }
     .fact .fact-title { color: var(--purple-2); font-weight: 700; font-size: 12px; display: block; margin-bottom: 4px; }
@@ -130,10 +132,8 @@
     .btn.secondary { background: var(--sec); box-shadow: none; border: 1px solid rgba(160,150,255,.2); }
     .streak-info { text-align: center; margin-top: 6px; color: var(--gold); font-weight: 600; font-size: 13px; }
 
-    /* ==== Rank & leaderboard ==== */
-    .rank-hero {
-      text-align: center; padding: 20px 0 12px;
-    }
+    /* ===== Rank tab ===== */
+    .rank-hero { text-align: center; padding: 18px 0 10px; }
     .rank-hero .big { font-size: 56px; }
     .rank-hero .name { font-size: 22px; font-weight: 800; margin-top: 4px; }
     .rank-hero .pts { color: var(--hint); font-size: 14px; margin-top: 2px; }
@@ -141,14 +141,14 @@
     .rank-row {
       display: flex; align-items: center; gap: 10px;
       background: var(--sec); border: 1px solid rgba(160,150,255,.12);
-      border-radius: 14px; padding: 11px 14px; margin-bottom: 7px;
-      opacity: .55;
+      border-radius: 14px; padding: 11px 14px; margin-bottom: 7px; opacity: .5;
     }
     .rank-row.reached { opacity: 1; border-color: rgba(123,92,255,.4); }
     .rank-row.current { border-color: var(--gold); background: linear-gradient(160deg, rgba(255,201,60,.08), var(--sec)); }
     .rank-row .re { font-size: 26px; }
     .rank-row .rn { font-weight: 700; font-size: 15px; }
     .rank-row .rq { margin-left: auto; color: var(--hint); font-size: 12.5px; text-align: right; }
+
     .top-list { list-style: none; margin-top: 12px; }
     .top-list li {
       display: flex; justify-content: space-between; align-items: center;
@@ -156,40 +156,25 @@
     }
     .top-list .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .top-list .pl { width: 26px; text-align: center; }
-    .badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 800; }
-    .badge.gold { background: rgba(255,201,60,.15); color: var(--gold); }
-    .badge.silver { background: rgba(192,200,216,.15); color: var(--silver); }
-    .badge.bronze { background: rgba(208,136,80,.15); color: var(--bronze); }
-    .badge.platinum { background: rgba(120,220,255,.15); color: #78dcff; }
-    .badge.master { background: rgba(160,120,255,.15); color: #b58fff; }
-    .badge.legend { background: rgba(255,160,220,.15); color: #ff9fdc; }
-    .seg { display: flex; gap: 6px; margin: 12px 0; flex-wrap: wrap; }
-    .seg button {
-      background: var(--sec); color: var(--hint); border: 1px solid rgba(160,150,255,.15);
-      border-radius: 999px; padding: 7px 13px; font-size: 12.5px; font-weight: 600; cursor: pointer;
-    }
-    .seg button.active { color: #fff; background: linear-gradient(135deg, var(--purple), #9b7bff); border-color: transparent; }
     .loading { text-align: center; padding: 40px; color: var(--hint); }
     .error { color: var(--bad); text-align: center; padding: 20px; }
     .note { color: var(--hint); font-size: 12px; text-align: center; }
 
-    /* ==== Stats ==== */
     .stat-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 14px 0; }
     .stat-card { background: var(--sec); border: 1px solid rgba(160,150,255,.12); border-radius: 14px; padding: 12px; text-align: center; }
     .stat-card .v { font-size: 20px; font-weight: 800; }
     .stat-card .l { color: var(--hint); font-size: 11px; margin-top: 3px; }
+    .offline-tag { color: var(--gold); font-size: 11px; text-align: center; margin-top: 8px; }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- ===== КВИЗ ===== -->
     <div id="tab-quiz" class="screen active">
       <div id="quizHome">
         <h1>🧠 Quiz Universe</h1>
-        <p class="subtitle">Выбери вселенную и проверь себя</p>
+        <p class="subtitle">20 вселенных · вопросы по твоему рангу</p>
         <div class="seg" id="quizFilter">
           <button class="active" data-f="all">Все</button>
-          <button data-f="level">Уровни</button>
           <button data-f="marvel">Marvel</button>
           <button data-f="anime">Аниме</button>
           <button data-f="other">Другое</button>
@@ -210,29 +195,25 @@
       </div>
     </div>
 
-    <!-- ===== РЕЙТИНГ ===== -->
     <div id="tab-top" class="screen">
       <h1>🏆 Рейтинг</h1>
-      <p class="subtitle">Топ игроков по вселенным</p>
-      <div class="seg" id="topSeg"></div>
+      <p class="subtitle">Общий рейтинг · не зависит от квиза</p>
       <div id="topList" class="loading">Загрузка...</div>
     </div>
 
-    <!-- ===== РАНГ ===== -->
     <div id="tab-rank" class="screen">
       <div class="rank-hero" id="rankHero"></div>
       <div class="rank-ladder" id="rankLadder"></div>
-      <p class="note">Ранг растёт от общих очков. Играй чаще — поднимайся выше! 🚀</p>
+      <p class="note">Чем выше ранг — тем сложнее вопросы. Лёгкие исчезают, сложные приходят чаще 🚀</p>
     </div>
 
-    <!-- ===== СТАТИСТИКА ===== -->
     <div id="tab-stats" class="screen">
       <h1>📊 Моя статистика</h1>
       <div id="statsContent" class="loading">Загрузка...</div>
+      <div class="offline-tag" id="syncTag"></div>
     </div>
   </div>
 
-  <!-- ===== TAB BAR ===== -->
   <div class="tabbar">
     <div class="tab active" data-tab="quiz"><span class="ic">⚔️</span>Квиз</div>
     <div class="tab" data-tab="top"><span class="ic">🏆</span>Рейтинг</div>
@@ -248,28 +229,38 @@
     const userName = tg.initDataUnsafe?.user?.first_name || 'Игрок';
     const userTg = tg.initDataUnsafe?.user?.username || '';
 
-    // API живёт на Render-сервере бота — единая статистика с ботом
-    const API = window.QUIZ_API_URL || 'https://quiz-universe-bot.onrender.com/api';
+    const API = 'https://quiz-universe-bot.onrender.com/api';
 
     let packs = {};
     let currentPack = null;
-    let qIndex = 0;
-    let qOrder = [];
+    let qIndex = 0, qOrder = [];
     let score = 0, streak = 0, bestStreak = 0, correctCount = 0;
     let answered = false;
-    let myStats = { total: { points: 0, games: 0 }, rank: { title: 'Бронза', emoji: '🥉' } };
+    let myPoints = 0, serverPoints = null, serverOnline = true;
+    let myStats = { total: { points: 0, games: 0, best_streak: 0 }, rank: { title: 'Бронза', emoji: '🥉' }, categories: [] };
+
+    // ---- Счётчик очков: локально всегда, серверно если доступно
+    const LOCAL_KEY = 'quiz_universe_total_' + userId;
+    function localPoints() { return Number(localStorage.getItem(LOCAL_KEY) || 0); }
+    function addLocalPoints(p) {
+      const v = localPoints() + p;
+      localStorage.setItem(LOCAL_KEY, String(v));
+      return v;
+    }
+    function totalPoints() {
+      // если сервер отвечает — серверные очки главные, плюс локальный недосинхронённый буфер
+      return Math.max(serverPoints || 0, localPoints());
+    }
 
     const covers = {
-      bronze:'🥉', silver:'🥈', gold:'🥇',
-      marvel:'🕷️', mcu:'🎬', dc:'🦇', anime:'🌸', naruto:'🍥', onepiece:'🏴‍☠️',
-      aot:'⚔️', demonslayer:'🗡️', dragonball:'🐲', tokyoghoul:'💀', mha:'💥',
-      deathnote:'📓', jjk:'🫱', hxh:'🧭', chainsawman:'🪚', pokemon:'⚡',
-      starwars:'🌌', harrypotter:'⚡', lotr:'💍', squidgame:'🦑'
+      marvel:'marvel', mcu:'mcu', dc:'dc', anime:'anime', naruto:'naruto', onepiece:'onepiece',
+      aot:'aot', demonslayer:'demonslayer', dragonball:'dragonball', tokyoghoul:'tokyoghoul', mha:'mha',
+      deathnote:'deathnote', jjk:'jjk', hxh:'hxh', chainsawman:'chainsawman', pokemon:'pokemon',
+      starwars:'starwars', harrypotter:'harrypotter', lotr:'lotr', squidgame:'squidgame'
     };
 
     const groupOf = (k) => {
-      if (['bronze','silver','gold'].includes(k)) return 'level';
-      if (['marvel','mcu','dc'].includes(k)) return 'marvel';
+      if (['marvel','mcu'].includes(k)) return 'marvel';
       if (['anime','naruto','onepiece','aot','demonslayer','dragonball','tokyoghoul','mha','deathnote','jjk','hxh','chainsawman'].includes(k)) return 'anime';
       return 'other';
     };
@@ -281,20 +272,32 @@
         packs = await res.json();
         renderCategories();
         loadMyStats();
+        loadTop();
       } catch (e) {
         document.getElementById('categories').innerHTML = '<div class="error">Не удалось загрузить вопросы</div>';
       }
     }
 
     async function loadMyStats() {
-      if (!userId) return;
+      // Локальные очки есть всегда
+      myPoints = localPoints();
+      // Сервер: если доступен — берём его (главный источник); недосинхронизированный буфер добавляется при синке
       try {
-        const r = await fetch(API + '/stats?userId=' + userId);
-        if (r.ok) { myStats = await r.json(); renderRankTab(); }
-      } catch (e) {}
-      try {
-        const r2 = await fetch(API + '/result', { method: 'OPTIONS' });
-      } catch (e) {}
+        const r = await fetch(API + '/stats?userId=' + userId, { signal: AbortSignal.timeout(4000) });
+        if (r.ok) {
+          serverOnline = true;
+          const d = await r.json();
+          myStats = d;
+          serverPoints = (d.total && d.total.points) || 0;
+          // если локальный больше — досинг не требуется, локальный буфер уже включён после оплаты результатата
+          document.getElementById('syncTag').textContent = '';
+          renderRankTab(); renderStatsTab();
+        }
+      } catch (e) {
+        serverOnline = false;
+        document.getElementById('syncTag').textContent = '⚡ Офлайн-режим: статистика сохранится локально и синхронизируется при reconnect';
+        renderRankTab(); renderStatsTab();
+      }
     }
 
     // ---------- вкладки ----------
@@ -304,7 +307,7 @@
         t.classList.add('active');
         document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
         document.getElementById('tab-' + t.dataset.tab).classList.add('active');
-        if (t.dataset.tab === 'top') renderTopTab();
+        if (t.dataset.tab === 'top') loadTop();
         if (t.dataset.tab === 'rank') renderRankTab();
         if (t.dataset.tab === 'stats') renderStatsTab();
       };
@@ -314,25 +317,17 @@
     function renderCategories(filter = 'all') {
       const grid = document.getElementById('categories');
       grid.innerHTML = '';
-      const order = ['bronze','silver','gold'];
       const list = Object.values(packs).filter((p) => filter === 'all' || groupOf(p.key) === filter);
-      list.sort((a, b) => {
-        const ia = order.indexOf(a.key), ib = order.indexOf(b.key);
-        if (ia >= 0 && ib >= 0) return ia - ib;
-        if (ia >= 0) return -1;
-        if (ib >= 0) return 1;
-        return 0;
-      });
       list.forEach((p) => {
         const btn = document.createElement('button');
-        btn.className = 'cat-btn ' + p.key;
-        const lvl = groupOf(p.key) === 'level';
-        const tag = p.key === 'bronze' ? '<span class="lvl-tag b">ЛЕГКО</span>'
-                  : p.key === 'silver' ? '<span class="lvl-tag s">СРЕДНЕ</span>'
-                  : p.key === 'gold' ? '<span class="lvl-tag g">СЛОЖНО</span>' : '';
-        btn.innerHTML = tag +
-          `<span class="cover">${covers[p.key] || '❓'}</span><span class="overlay"></span>` +
-          `<span class="label">${p.emoji} ${p.title}</span>`;
+        btn.className = 'cat-btn';
+        const cover = covers[p.key];
+        btn.innerHTML =
+          `<div class="fallback">${p.emoji || '❓'}</div>` +
+          (cover ? `<img class="cover" src="./covers/${cover}.jpg" alt="" onerror="this.style.display='none'">` : '') +
+          `<div class="overlay"></div>` +
+          (serverPoints != null ? `<span class="rank-badge">${(myStats.rank || {}).emoji || ''} ${totalPoints()} очк.</span>` : '') +
+          `<div class="label">${p.emoji || ''} ${p.title}</div>`;
         btn.onclick = () => startQuiz(p.key);
         grid.appendChild(btn);
       });
@@ -358,7 +353,7 @@
 
     function startQuiz(packKey) {
       currentPack = packs[packKey];
-      qOrder = shuffle(Object.keys(currentPack.questions)); // вопросы каждый раз в новом порядке
+      qOrder = shuffle(Object.keys(currentPack.questions).map(Number));
       qIndex = 0; score = 0; streak = 0; bestStreak = 0; correctCount = 0;
       document.getElementById('quizHome').style.display = 'none';
       document.getElementById('quizPlay').style.display = 'block';
@@ -381,7 +376,7 @@
 
       const opts = document.getElementById('options');
       opts.innerHTML = '';
-      shuffle(q.options.map((text, i) => ({ text, i }))).forEach((o) => {
+      shuffle(q.options.map((t) => ({ text: t }))).forEach((o) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
         btn.textContent = o.text;
@@ -400,27 +395,21 @@
         if (b.dataset.correct === 'true') b.classList.add('correct');
         if (!isCorrect && b === btn) b.classList.add('wrong');
       });
-
+      const gained = isCorrect ? (streak >= 2 ? 3 : 2) : 0;
       if (isCorrect) {
-        score += streak >= 2 ? 3 : 2;
-        streak += 1; correctCount += 1;
+        score += gained; streak += 1; correctCount += 1;
         bestStreak = Math.max(bestStreak, streak);
-      } else {
-        streak = 0;
-      }
+      } else streak = 0;
       try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {}
 
       const fact = document.getElementById('fact');
-      fact.innerHTML = `<span class="fact-title">${isCorrect ? '✅ Верно — +' + (bestStreak && streak >= 3 ? 3 : 2) : '❌ Правильно: ' + q.answer}</span>💡 ${q.fact}`;
+      fact.innerHTML = `<span class="fact-title">${isCorrect ? '✅ Верно — +' + gained + ' очк.' : '❌ Правильно: ' + q.answer}</span>💡 ${q.fact}`;
       fact.classList.add('show');
       document.getElementById('nextBtn').style.display = 'block';
       document.getElementById('quitBtn').style.display = 'block';
     }
 
-    function nextQuestion() {
-      qIndex += 1;
-      loadQuestion();
-    }
+    function nextQuestion() { qIndex += 1; loadQuestion(); }
 
     function quitQuiz() {
       if (score > 0 || qIndex > 0) showResult();
@@ -429,15 +418,12 @@
 
     function showResult() {
       document.getElementById('prog').style.width = '100%';
-      const max = qOrder.length * 3;
       saveAndRank();
-      // показать вкладку ранга как «финальный экран»
       document.querySelectorAll('.tab').forEach((x) => x.classList.remove('active'));
       document.querySelector('.tab[data-tab=rank]').classList.add('active');
       document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
       document.getElementById('tab-rank').classList.add('active');
       renderRankTab(score);
-      // вернуться в выбор квизов
       document.getElementById('quizHome').style.display = 'block';
       document.getElementById('quizPlay').style.display = 'none';
     }
@@ -447,63 +433,58 @@
       document.getElementById('quizPlay').style.display = 'none';
     }
 
+    // ---- сохранение: локально + сервер (единая статистика)
     async function saveAndRank() {
-      const localQ = 'quiz_stats_' + userId + '_' + currentPack.key;
+      // Локально: суммарные очки + по категории
+      const newLocal = addLocalPoints(score);
+      const cKey = 'quiz_universe_cat_' + userId + '_' + currentPack.key;
       try {
-        const prev = JSON.parse(localStorage.getItem(localQ) || '{"points":0,"games":0,"best":0}');
+        const prev = JSON.parse(localStorage.getItem(cKey) || '{"points":0,"games":0,"best":0}');
         prev.points += score; prev.games += 1; prev.best = Math.max(prev.best, bestStreak);
-        localStorage.setItem(localQ, JSON.stringify(prev));
+        localStorage.setItem(cKey, JSON.stringify(prev));
       } catch (e) {}
 
-      // единая статистика: отправляем боту на сервер
       if (userId) {
         try {
-          const r = await fetch(API + '/result', {
+          await fetch(API + '/result', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, username: userTg, userName, packKey: currentPack.key, score, bestStreak })
+            body: JSON.stringify({ userId, username: userTg, userName, packKey: currentPack.key, score, bestStreak }),
+            signal: AbortSignal.timeout(5000)
           });
-          if (r.ok) loadMyStats();
-        } catch (e) {}
+          serverOnline = true;
+          await loadMyStats();
+        } catch (e) {
+          serverOnline = false;
+          // локальный буфер уже добавлен, синк произойдёт при следующей игре
+        }
       }
     }
 
-    // ---------- рейтинг (вкладка) ----------
-    let topPack = 'global';
-    function renderTopTab() {
-      const seg = document.getElementById('topSeg');
-      const opts = [['global', '🌍 Общий']].concat(Object.values(packs).map((p) => [p.key, p.emoji + ' ' + p.title]));
-      seg.innerHTML = '';
-      opts.forEach(([key, label]) => {
-        const b = document.createElement('button');
-        b.textContent = label;
-        if (key === topPack) b.classList.add('active');
-        b.onclick = () => { topPack = key; renderTopTab(); };
-        seg.appendChild(b);
-      });
+    // ---------- рейтинг ----------
+    async function loadTop() {
       const el = document.getElementById('topList');
       el.className = 'loading'; el.textContent = 'Загрузка...';
-      fetch(API + '/top?pack=' + topPack)
-        .then((r) => r.json())
-        .then((d) => {
-          el.className = '';
-          if (!d.list || !d.list.length) {
-            el.innerHTML = '<p style="color:var(--hint);padding:20px;text-align:center">Рейтинг пока пуст. Стань первым!</p>';
-            return;
-          }
-          const medals = ['🥇','🥈','🥉'];
-          el.innerHTML = '<ul class="top-list">' + d.list.map((u) => {
-            const pl = medals[u.place - 1] || u.place + '.';
-            return `<li><span class="pl">${pl}</span><span class="name">${escapeHtml(u.name)}</span><span><b>${u.points}</b> <span style="color:var(--hint)">очк.</span></span></li>`;
-          }).join('') + '</ul>';
-        })
-        .catch(() => {
-          el.className = '';
-          el.innerHTML = '<div class="error">Сервер не отвечает. Статистика подтянется позже.</div>';
-        });
+      try {
+        const r = await fetch(API + '/top?pack=global', { signal: AbortSignal.timeout(5000) });
+        const d = await r.json();
+        el.className = '';
+        if (!d.list || !d.list.length) {
+          el.innerHTML = '<p style="color:var(--hint);padding:20px;text-align:center">Рейтинг пока пуст. Стань первым!</p>';
+          return;
+        }
+        const medals = ['🥇','🥈','🥉'];
+        el.innerHTML = '<ul class="top-list">' + d.list.map((u) => {
+          const pl = medals[u.place - 1] || u.place + '.';
+          return `<li><span class="pl">${pl}</span><span class="name">${escapeHtml(u.name)}</span><span><b>${u.points}</b> <span style="color:var(--hint)">очк.</span></span></li>`;
+        }).join('') + '</ul>';
+      } catch (e) {
+        el.className = '';
+        el.innerHTML = '<div class="error">Сервер не отвечает. Попробуй позже.</div>';
+      }
     }
 
-    // ---------- ранг (вкладка) ----------
+    // ---------- ранг ----------
     const RANKS_UI = [
       { key: 'bronze', title: 'Бронза', emoji: '🥉', min: 0 },
       { key: 'silver', title: 'Серебро', emoji: '🥈', min: 60 },
@@ -516,12 +497,12 @@
     function renderRankTab(lastGame) {
       const hero = document.getElementById('rankHero');
       const ladder = document.getElementById('rankLadder');
-      const pts = (myStats.total && myStats.total.points) || 0;
+      const pts = totalPoints();
       const cur = RANKS_UI.filter((r) => pts >= r.min).pop();
       const next = RANKS_UI.find((r) => pts < r.min) || null;
 
       let html = `<div class="big">${cur.emoji}</div><div class="name">${cur.title}</div>` +
-        `<div class="pts">${pts} очк. всего${typeof lastGame === 'number' ? ` · +${lastGame} за последнюю игру` : ''}</div>`;
+        `<div class="pts">${pts} очк. всего${typeof lastGame === 'number' ? ` · +${lastGame} за игру` : ''}${serverOnline ? '' : ' · офлайн'}</div>`;
       if (next) html += `<div style="color:var(--gold);font-size:13px;margin-top:6px">До ${next.emoji} ${next.title}: ещё ${next.min - pts} очк.</div>`;
       else html += `<div style="color:var(--gold);font-size:13px;margin-top:6px">Максимальный ранг! 👑</div>`;
       hero.innerHTML = html;
@@ -531,11 +512,11 @@
         const isCurrent = cur.key === r.key;
         return `<div class="rank-row ${reached ? 'reached' : ''} ${isCurrent ? 'current' : ''}">` +
           `<span class="re">${r.emoji}</span><span class="rn">${r.title}</span>` +
-          `<span class="rq">${reached ? (isCurrent ? 'текущий ранг' : 'достигнут') : r.min + ' очк.'}</span></div>`;
+          `<span class="rq">${reached ? (isCurrent ? 'текущий' : '✓') : 'с ' + r.min + ' очк.'}</span></div>`;
       }).join('');
     }
 
-    // ---------- статистика (вкладка) ----------
+    // ---------- статистика ----------
     function renderStatsTab() {
       const el = document.getElementById('statsContent');
       el.className = '';
@@ -543,36 +524,26 @@
         el.innerHTML = '<div class="error">Открой через Telegram, чтобы видить свою статистику</div>';
         return;
       }
-      el.innerHTML = 'Загрузка...';
-      fetch(API + '/stats?userId=' + userId)
-        .then((r) => r.json())
-        .then((d) => {
-          myStats = d;
-          const t = d.total || {};
-          let html = `<div class="stat-cards">
-            <div class="stat-card"><div class="v">${t.points || 0}</div><div class="l">очков</div></div>
-            <div class="stat-card"><div class="v">${t.games || 0}</div><div class="l">игр</div></div>
-            <div class="stat-card"><div class="v">${t.best_streak || 0}</div><div class="l">лучшая серия</div></div>
-          </div>`;
-          const cats = d.categories || [];
-          if (cats.length) {
-            html += '<ul class="top-list">';
-            const maxPts = Math.max(...cats.map((c) => c.points), 1);
-            cats.sort((a, b) => b.points - a.points).forEach((c) => {
-              const ratio = c.points / (c.games * 36 || 1);
-              const badge = ratio >= 0.7 ? 'gold' : ratio >= 0.45 ? 'silver' : 'bronze';
-              html += `<li><span class="name">${c.emoji} ${c.title}</span><span style="flex-shrink:0"><span class="badge ${badge}">«${ratio >= 0.7 ? '🥇' : ratio >= 0.45 ? '🥈' : '🥉'}</span> <b>${c.points}</b></span></li>`;
-            });
-            html += '</ul>';
-          } else {
-            html += '<p style="color:var(--hint);text-align:center;padding:16px">Ещё не играли. Начните квиз!</p>';
-          }
-          el.innerHTML = html;
-        })
-        .catch(() => {
-          el.className = '';
-          el.innerHTML = '<div class="error">Сервер не отвечает.</div>';
+      const t = myStats.total || {};
+      const pts = totalPoints();
+      let html = `<div class="stat-cards">
+        <div class="stat-card"><div class="v">${pts}</div><div class="l">очков</div></div>
+        <div class="stat-card"><div class="v">${t.games || 0}</div><div class="l">игр</div></div>
+        <div class="stat-card"><div class="v">${t.best_streak || 0}</div><div class="l">лучшая серия</div></div>
+      </div>`;
+      const cats = myStats.categories || [];
+      if (cats.length) {
+        html += '<ul class="top-list">';
+        cats.sort((a, b) => b.points - a.points).forEach((c) => {
+          const ratio = c.points / (c.games * 36 || 1);
+          const badge = ratio >= 0.7 ? 'gold' : ratio >= 0.45 ? 'silver' : 'bronze';
+          html += `<li><span class="name">${c.emoji} ${c.title}</span><span><span class="badge ${badge}">${ratio >= 0.7 ? '🥇' : ratio >= 0.45 ? '🥈' : '🥉'}</span> <b>${c.points}</b></span></li>`;
         });
+        html += '</ul>';
+      } else {
+        html += '<p style="color:var(--hint);text-align:center;padding:16px">Ещё не играли. Начните квиз!</p>';
+      }
+      el.innerHTML = html;
     }
 
     function escapeHtml(s) {
