@@ -7,6 +7,7 @@ function getPoints(user) {
 
 function displayName(u) {
   if (!u) return 'Игрок';
+  // Приоритет: тег @username, потом имя
   if (u.username) return '@' + u.username;
   return u.first_name || `Игрок ${u.id}`;
 }
@@ -25,7 +26,7 @@ function leaderboardText(users, topN) {
   let out = '🏆 <b>Рейтинг игроков</b>\n\n';
   list.forEach((u, i) => {
     const place = medals[i] || `${i + 1}.`;
-    out += `${place} ${displayName(u)} — <b>${getPoints(u)}</b> очк.\n`;
+    out += `${place} ${displayName(u)} — <b>${getPoints(u)}</b> очк. (${u.games || 0} игр)\n`;
   });
   return out.trimEnd();
 }

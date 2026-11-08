@@ -3,31 +3,26 @@ const { loadEnv } = require('./env');
 loadEnv();
 
 const http = require('http');
+const { createServer } = require('./api');
+const storage = require('./storage');
 
-const token = process.env.BOT_TOKEN;
-if (!token) {
-  console.error('❌ BOT_TOKEN не задан в .env — см. README');
-  process.exit(1);
-}
+storage.initGithub();
+storage.pullState().then(() => {
+  const port = process.env.PORT || 3000;
+  createServer().listen(port, () => console.log(`[http] api server on :${port}`));
 
-// Minimal HTTP server for platforms that require a bound port (polling bot has no inbound server).
-const port = process.env.PORT || 3000;
-http
-  .createServer((req, res) => {
-    if (req.url === '/health') {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'ok' }));
-      return;
-    }
-    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Quiz Universe Bot is running');
-  })
-  .listen(port, () => console.log(`[http] health server on :${port}`));
+  const token = process.env.BOT_TOKEN;
+  if (!token) {
+    console.error('❌ BOT_TOKEN не задан в .env — см. README');
+    process.exit(1);
+  }
 
-const { runBot } = require('./engine');
-
-runBot({ token, username: process.env.BOT_USERNAME })
-  .catch((e) => {
+  const { runBot } = require('./engine');
+  runBot({ token, username: process.env.BOT_USERNAME }).catch((e) => {
     console.error('[fatal]', e.message);
     process.exit(1);
   });
+
+  // Регулярный бэкап стейта в GitHub (каждые 15 мин, на случай незакоммиченных изменений)
+  setInterval(() => storage.pushState(), 15 * 60 * 1000);
+});

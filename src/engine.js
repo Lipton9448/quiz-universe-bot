@@ -115,10 +115,17 @@ function startQuiz(bot, chatId, from, packKey) {
   userCategory.set(from.id, packKey);
   const st = store(from, packKey);
   const u = st.get();
+  // Случайный порядок вопросов при каждой игре: заходи чаще — каждый раз ново
+  const order = pack.questions.map((_, i) => i);
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
   setSession(chatId, from.id, {
     chatId,
     userId: from.id,
     packKey,
+    order,
     index: 0,
     points: 0,
     streak: 0,
@@ -143,18 +150,19 @@ function askQuestion(bot, chatId, userId) {
   if (!s) return;
   const pack = packs[s.packKey];
   if (!pack) return;
-  if (s.index >= pack.questions.length) return finish(bot, chatId, userId);
+  if (s.index >= s.order.length) return finish(bot, chatId, userId);
 
-  const q = pack.questions[s.index];
-  let text = `❓ <b>Вопрос ${s.index + 1}/${pack.questions.length}</b>\n\n${esc(q.q)}`;
+  const q = pack.questions[s.order[s.index]];
+  let text = `❓ <b>Вопрос ${s.index + 1}/${s.order.length}</b>\n\n${esc(q.q)}`;
   if (s.streak >= 2) text += `\n\n🔥 Серия: ${s.streak} подряд!`;
 
   // Answer options are shown in random order: correct answer not always first.
-  const opts = shuffledOptions(q, s.index + 1);
+  const opts = shuffledOptions(q, Math.floor(Math.random() * 1e6));
   s.currentOrder = opts;
   const buttons = opts.map((o, i) => [
     { text: o.text, callback_data: `a:${s.index}:${i}` }
   ]);
+  buttons.push([{ text: '🛑 Закончить квиз', callback_data: 'quiz:stop' }]);
   send(bot, chatId, text, { reply_markup: { inline_keyboard: buttons } });
 }
 
@@ -175,28 +183,43 @@ function finish(bot, chatId, userId) {
   u.best_streak = Math.max(u.best_streak || 0, s.bestStreak, s.streak);
   st.save();
 
-  const max = pack.questions.length * STREAK_BONUS;
+  // Глобальный ранг по суммарным очкам (единый для бота и Mini App)
+  const globalSt = store({ id: userId }, 'global');
+  const g = globalSt.get();
+  g.points = (g.points || 0) + s.points;
+  g.games = (g.games || 0) + 1;
+  g.best_streak = Math.max(g.best_streak || 0, s.bestStreak, s.streak);
+  globalSt.save();
+
+  const { rankFor, nextRank } = require('./ranks');
+  const rank = rankFor(g.points || 0);
+  const next = nextRank(g.points || 0);
+
+  const max = s.order.length * STREAK_BONUS;
   const ratio = s.points / max;
-  const rank =
-    ratio >= 0.9 ? pack.ranks[0] :
-    ratio >= 0.7 ? pack.ranks[1] :
-    ratio >= 0.45 ? pack.ranks[2] :
-    ratio >= 0.2 ? pack.ranks[3] :
-    pack.ranks[4];
+  const levelEmoji =
+    ratio >= 0.9 ? '🥇' :
+    ratio >= 0.7 ? '🥈' :
+    ratio >= 0.45 ? '🥉' : '🌱';
 
   const topText = leaderboard.leaderboardText(st.getData(), TOPN);
+  const nextText = next
+    ? `\n📈 До ранга ${next.emoji} <b>${next.title}</b>: ещё <b>${next.min - g.points}</b> очк.`
+    : `\n👑 Ты на максимальном ранге!`;
+
   const shareText = encodeURIComponent(
-    `Я набрал ${s.points} очк. в квизе «${pack.title}» ${pack.emoji} — ${rank.title}!\nПрисоединяйся: https://t.me/${process.env.BOT_USERNAME || 'bot'}`
+    `Я набрал ${s.points} очк. в квизе «${pack.title}» ${pack.emoji} — ранг ${rank.emoji} ${rank.title}!\nПрисоединяйся: https://t.me/${process.env.BOT_USERNAME || 'bot'}`
   );
 
   send(
     bot,
     chatId,
-    `🏁 <b>Игра окончена!</b>\n\n` +
-      `⭐ Очков: <b>${s.points}</b> из ${max}\n` +
-      `🎯 Верно: ${s.correctCount}/${pack.questions.length}\n` +
+    `🏁 <b>Игра окончена!</b> ${levelEmoji}\n\n` +
+      `⭐ Очков за игру: <b>${s.points}</b> из ${max}\n` +
+      `🎯 Верно: ${s.correctCount}/${s.order.length}\n` +
       `🔥 Лучшая серия: ${Math.max(s.bestStreak, s.streak)}\n` +
-      `🏅 Ранг: <b>${esc(rank.title)}</b> ${rank.emoji}\n\n` +
+      `🏅 Твой ранг: <b>${rank.emoji} ${rank.title}</b> (всего ${g.points} очк.)` +
+      nextText + `\n\n` +
       topText +
       `\n\n🎮 /quiz — сыграть ещё\n📊 /stats — статистика`,
     {
@@ -367,6 +390,18 @@ async function runBot(env) {
       const packKey = data.slice(4);
       bot.answerCallbackQuery(cq.id, { text: `Загружаю ${packs[packKey].title}...` }).catch(() => {});
       startQuiz(bot, chatId, from, packKey);
+      return;
+    }
+
+    if (data === 'quiz:stop') {
+      bot.answerCallbackQuery(cq.id, { text: 'Останавливаю...' }).catch(() => {});
+      const s = getSession(chatId, from.id);
+      if (s && s.index > 0) {
+        finish(bot, chatId, from.id); // сохраняем заработанные очки
+      } else {
+        clearSession(chatId, from.id);
+        send(bot, chatId, 'Квиз прерван. Сыграть ещё — /quiz 🙂');
+      }
       return;
     }
 
