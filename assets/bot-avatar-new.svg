@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="30%" cy="25%" r="100%">
+      <stop offset="0%" stop-color="#1b1440"/>
+      <stop offset="55%" stop-color="#120d2e"/>
+      <stop offset="100%" stop-color="#0a0718"/>
+    </radialGradient>
+    <linearGradient id="brain" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#a48bff"/>
+      <stop offset="100%" stop-color="#7b5cff"/>
+    </linearGradient>
+    <linearGradient id="ringG" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffc93c"/>
+      <stop offset="34%" stop-color="#c9d4e4"/>
+      <stop offset="67%" stop-color="#d08850"/>
+      <stop offset="100%" stop-color="#ffc93c"/>
+    </linearGradient>
+    <linearGradient id="starG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffe680"/>
+      <stop offset="100%" stop-color="#ffb01f"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- scattered stars -->
+  <g fill="#ffffff" opacity="0.55">
+    <circle cx="88" cy="92" r="3"/><circle cx="140" cy="64" r="2"/>
+    <circle cx="430" cy="120" r="2.5"/><circle cx="470" cy="70" r="2"/>
+    <circle cx="60" cy="420" r="2.5"/><circle cx="440" cy="430" r="3"/>
+    <circle cx="380" cy="60" r="1.5"/><circle cx="30" cy="250" r="2"/>
+  </g>
+
+  <!-- outer rank ring: gold/silver/bronze gradient -->
+  <circle cx="256" cy="256" r="196" fill="none" stroke="url(#ringG)" stroke-width="20"/>
+
+  <!-- inner ring shadow line -->
+  <circle cx="256" cy="256" r="172" fill="none" stroke="#000000" opacity="0.25" stroke-width="6"/>
+
+  <!-- brain: stylized two hemispheres -->
+  <g filter="url(#glow)">
+    <path d="M256 148c-60 0-104 40-104 92 0 26 12 48 32 64l-8 52c-1 8 5 14 13 14h30l6 34c1 7 7 12 14 12h34c7 0 13-5 14-12l6-34h30c8 0 14-6 13-14l-8-52c20-16 32-38 32-64 0-52-44-92-104-92z"
+          fill="url(#brain)" opacity="0.95"/>
+  </g>
+
+  <!-- hemisphere split -->
+  <path d="M256 148v254" stroke="#0a0718" stroke-width="10" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- brain grooves -->
+  <g stroke="#0a0718" stroke-width="7" stroke-linecap="round" fill="none" opacity="0.5">
+    <path d="M210 200c14-8 28 0 28 14"/>
+    <path d="M302 200c-14-8-28 0-28 14"/>
+    <path d="M204 268c12 10 34 10 46 0"/>
+    <path d="M308 268c-12 10-34 10-46 0"/>
+  </g>
+
+  <!-- question mark -->
+  <g>
+    <circle cx="366" cy="160" r="62" fill="#17123a" stroke="url(#ringG)" stroke-width="10"/>
+    <text x="366" y="184" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="82" font-weight="bold" fill="url(#starG)">?</text>
+  </g>
+
+  <!-- podium mini: gold star at bottom -->
+  <g transform="translate(256 402)">
+    <circle r="40" fill="#17123a" stroke="url(#ringG)" stroke-width="7"/>
+    <path d="M0 -22l6.5 13.6 15 2-10.8 10.5 2.6 14.9L0 11.5l-13.3 7 2.6-14.9L-21.5 -6.4l15-2z" fill="url(#starG)"/>
+  </g>
+</svg>

@@ -6,54 +6,123 @@
   <title>Quiz Universe</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    :root { --bg: var(--tg-theme-bg-color, #1a1a2e); --text: var(--tg-theme-text-color, #eee); --hint: var(--tg-theme-hint-color, #aaa); --btn: var(--tg-theme-button-color, #6c5ce7); --btn-text: var(--tg-theme-button-text-color, #fff); --sec: var(--tg-theme-secondary-bg-color, #16213e); }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 16px; }
+    :root {
+      --bg: var(--tg-theme-bg-color, #0f0f1e);
+      --text: var(--tg-theme-text-color, #eef0ff);
+      --hint: var(--tg-theme-hint-color, #9aa0c0);
+      --sec: var(--tg-theme-secondary-bg-color, #1a1c33);
+      --purple: #7b5cff;
+      --purple-2: #a48bff;
+      --gold: #ffc93c;
+      --silver: #c0c8d8;
+      --bronze: #d08850;
+      --good: #2ee6a8;
+      --bad: #ff5d73;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: radial-gradient(1200px 600px at 50% -10%, #2a2560 0%, var(--bg) 60%) fixed, var(--bg);
+      color: var(--text); min-height: 100vh; padding: 16px;
+    }
     .container { max-width: 480px; margin: 0 auto; }
-    h1 { font-size: 22px; margin-bottom: 4px; }
-    .subtitle { color: var(--hint); font-size: 14px; margin-bottom: 20px; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-    .cat-btn { background: var(--sec); border: none; border-radius: 12px; padding: 16px 12px; color: var(--text); font-size: 15px; cursor: pointer; text-align: left; transition: transform .1s, background .2s; }
-    .cat-btn:active { transform: scale(0.97); }
-    .cat-btn .emoji { font-size: 24px; display: block; margin-bottom: 6px; }
+    h1 { font-size: 24px; margin-bottom: 4px; letter-spacing: .3px; }
+    .subtitle { color: var(--hint); font-size: 14px; margin-bottom: 18px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+    .cat-btn {
+      position: relative; overflow: hidden;
+      background: linear-gradient(160deg, var(--sec), #222648);
+      border: 1px solid rgba(160,150,255,.14);
+      border-radius: 16px; padding: 14px 12px; color: var(--text);
+      font-size: 15px; cursor: pointer; text-align: left;
+      transition: transform .08s, border-color .2s, box-shadow .2s;
+      box-shadow: 0 4px 18px rgba(0,0,0,.25);
+    }
+    .cat-btn::after {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(120px 60px at 90% 0%, rgba(123,92,255,.25), transparent 70%);
+      pointer-events: none;
+    }
+    .cat-btn:active { transform: scale(0.97); border-color: var(--purple); }
+    .cat-btn .emoji { font-size: 26px; display: block; margin-bottom: 6px; }
+    .cat-btn.gold { border-color: rgba(255,201,60,.35); }
+    .cat-btn.silver { border-color: rgba(192,200,216,.3); }
+    .cat-btn.bronze { border-color: rgba(208,136,80,.35); }
     .screen { display: none; }
     .screen.active { display: block; }
-    .question-card { background: var(--sec); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
-    .q-num { color: var(--hint); font-size: 13px; margin-bottom: 8px; }
-    .q-text { font-size: 17px; font-weight: 600; line-height: 1.4; margin-bottom: 16px; }
-    .option-btn { width: 100%; background: var(--bg); border: 2px solid var(--sec); border-radius: 10px; padding: 14px; margin-bottom: 8px; color: var(--text); font-size: 15px; cursor: pointer; text-align: left; transition: all .15s; }
-    .option-btn:active { transform: scale(0.98); }
-    .option-btn.correct { border-color: #00b894; background: rgba(0,184,148,.15); }
-    .option-btn.wrong { border-color: #d63031; background: rgba(214,48,49,.15); }
-    .option-btn.disabled { opacity: .6; pointer-events: none; }
-    .fact { background: var(--sec); border-radius: 12px; padding: 14px; margin-top: 12px; font-size: 14px; color: var(--hint); display: none; }
-    .fact.show { display: block; }
-    .streak { color: #fdcb6e; font-weight: 600; }
-    .result { text-align: center; padding: 20px; }
-    .result .score { font-size: 48px; font-weight: 700; margin: 16px 0; }
-    .result .rank { font-size: 20px; margin-bottom: 8px; }
-    .result .stats { color: var(--hint); margin-bottom: 20px; }
-    .btn { background: var(--btn); color: var(--btn-text); border: none; border-radius: 10px; padding: 14px 24px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px; }
+    .question-card {
+      background: linear-gradient(160deg, var(--sec), #232750);
+      border: 1px solid rgba(160,150,255,.16);
+      border-radius: 20px; padding: 20px; margin-bottom: 14px;
+      box-shadow: 0 8px 28px rgba(0,0,0,.35);
+    }
+    .q-num { color: var(--hint); font-size: 13px; margin-bottom: 8px; display: flex; justify-content: space-between; }
+    .q-level { font-weight: 600; }
+    .q-text { font-size: 17px; font-weight: 600; line-height: 1.45; margin-bottom: 16px; }
+    .option-btn {
+      width: 100%; background: rgba(15,15,30,.6);
+      border: 1.5px solid rgba(160,150,255,.22);
+      border-radius: 12px; padding: 14px; margin-bottom: 8px;
+      color: var(--text); font-size: 15px; cursor: pointer; text-align: left;
+      transition: all .15s;
+    }
+    .option-btn:active { transform: scale(0.98); border-color: var(--purple); }
+    .option-btn.correct { border-color: var(--good); background: rgba(46,230,168,.12); }
+    .option-btn.wrong { border-color: var(--bad); background: rgba(255,93,115,.12); }
+    .option-btn.disabled { opacity: .55; pointer-events: none; }
+    .fact {
+      background: rgba(123,92,255,.08); border: 1px solid rgba(123,92,255,.25);
+      border-radius: 12px; padding: 12px 14px; margin-top: 10px;
+      font-size: 14px; color: var(--hint); display: none;
+    }
+    .fact.show { display: block; animation: fade .25s ease; }
+    @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    .streak { color: var(--gold); font-weight: 600; }
+    .progress { height: 6px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; margin-bottom: 12px; }
+    .progress > div { height: 100%; background: linear-gradient(90deg, var(--purple), var(--purple-2)); width: 0; transition: width .3s; }
+    .result { text-align: center; padding: 18px 0; }
+    .result .medal { font-size: 64px; }
+    .result .score { font-size: 44px; font-weight: 700; margin: 8px 0; }
+    .result .rank { font-size: 20px; margin-bottom: 6px; }
+    .result .stats { color: var(--hint); margin-bottom: 18px; }
+    .btn {
+      background: linear-gradient(135deg, var(--purple), #9b7bff);
+      color: #fff; border: none; border-radius: 12px; padding: 14px 24px;
+      font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px;
+      box-shadow: 0 6px 20px rgba(123,92,255,.35); transition: transform .08s;
+    }
     .btn:active { transform: scale(0.98); }
-    .btn.secondary { background: var(--sec); color: var(--text); }
+    .btn.secondary { background: var(--sec); box-shadow: none; border: 1px solid rgba(160,150,255,.2); }
     .top-list { list-style: none; }
-    .top-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--sec); font-size: 14px; gap: 8px; }
+    .top-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px 2px; border-bottom: 1px solid rgba(255,255,255,.07); font-size: 14px; gap: 8px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .badge.gold { background: rgba(255,201,60,.15); color: var(--gold); }
+    .badge.silver { background: rgba(192,200,216,.15); color: var(--silver); }
+    .badge.bronze { background: rgba(208,136,80,.15); color: var(--bronze); }
     .loading { text-align: center; padding: 40px; color: var(--hint); }
-    .error { color: #d63031; text-align: center; padding: 20px; }
-    .note { color: var(--hint); font-size: 12px; text-align: center; margin-top: 8px; }
+    .error { color: var(--bad); text-align: center; padding: 20px; }
+    .note { color: var(--hint); font-size: 12px; text-align: center; margin-top: 10px; }
+    .levels { display: flex; gap: 8px; margin-bottom: 16px; }
+    .levels .badge { flex: 1; text-align: center; padding: 8px; font-size: 13px; }
   </style>
 </head>
 <body>
   <div class="container">
     <div id="home" class="screen active">
       <h1>🧠 Quiz Universe</h1>
-      <p class="subtitle">20 квизов по вселенным Marvel, DC и Аниме</p>
+      <p class="subtitle">Квизы по Marvel, DC и Аниме</p>
+      <div class="levels">
+        <span class="badge bronze">🥉 Бронза</span>
+        <span class="badge silver">🥈 Серебро</span>
+        <span class="badge gold">🥇 Золото</span>
+      </div>
       <div class="grid" id="categories"></div>
       <button class="btn secondary" onclick="showStats()">📊 Моя статистика</button>
       <p class="note">Статистика сохраняется на этом устройстве.</p>
     </div>
 
     <div id="quiz" class="screen">
+      <div class="progress"><div id="prog"></div></div>
       <div class="question-card">
         <div class="q-num" id="qNum"></div>
         <div class="q-text" id="qText"></div>
@@ -65,8 +134,9 @@
 
     <div id="result" class="screen">
       <div class="result">
-        <div class="rank" id="resultRank"></div>
+        <div class="medal" id="resultMedal"></div>
         <div class="score" id="resultScore"></div>
+        <div class="rank" id="resultRank"></div>
         <div class="stats" id="resultStats"></div>
         <button class="btn" onclick="goHome()">🏠 В меню</button>
         <button class="btn secondary" onclick="shareResult()">📤 Поделиться</button>
@@ -81,131 +151,215 @@
   </div>
 
   <script>
-    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-    if (tg) { tg.ready(); tg.expand(); }
+    const tg = window.Telegram.WebApp;
+    try { tg.ready(); tg.expand(); } catch (e) {}
 
-    const userId = tg?.initDataUnsafe?.user?.id || 'local';
-    let currentPack = null, currentQuestion = 0, score = 0, streak = 0, bestStreak = 0, correctCount = 0, packs = {}, lastResult = null;
+    const userId = tg.initDataUnsafe?.user?.id || 0;
+    const userName = tg.initDataUnsafe?.user?.first_name || 'Игрок';
 
-    function statsKey(packKey) { return `quiz_stats_${userId}_${packKey}`; }
-    function loadLocal(packKey) { try { return JSON.parse(localStorage.getItem(statsKey(packKey))||'{}'); } catch { return {}; } }
-    function saveLocal(packKey, u) { try { localStorage.setItem(statsKey(packKey), JSON.stringify(u)); } catch {} }
+    let currentPack = null;
+    let currentQuestion = 0;
+    let score = 0;
+    let streak = 0;
+    let bestStreak = 0;
+    let correctCount = 0;
+    let packs = {};
+    let lastResult = null;
+
+    function statKey(packKey) { return 'quiz_stats_' + userId + '_' + packKey; }
+
+    function loadStat(packKey) {
+      try { return JSON.parse(localStorage.getItem(statKey(packKey))) || { points: 0, games: 0, best: 0 }; }
+      catch (e) { return { points: 0, games: 0, best: 0 }; }
+    }
+
+    function saveStat(packKey, add) {
+      const s = loadStat(packKey);
+      s.points += add.score; s.games += 1; s.best = Math.max(s.best || 0, add.best);
+      localStorage.setItem(statKey(packKey), JSON.stringify(s));
+      return s;
+    }
 
     async function loadPacks() {
       try {
-        const res = await fetch('./packs.json', { cache: 'no-store' });
+        const res = await fetch('./packs.json');
         packs = await res.json();
         renderCategories();
       } catch (e) {
-        document.getElementById('categories').innerHTML = '<div class="error">Не удалось загрузить packs.json</div>';
+        document.getElementById('categories').innerHTML = '<div class="error">Не удалось загрузить вопросы</div>';
       }
+    }
+
+    function levelClass(key) {
+      if (key === 'gold') return 'gold';
+      if (key === 'silver') return 'silver';
+      if (key === 'bronze') return 'bronze';
+      return '';
     }
 
     function renderCategories() {
       const grid = document.getElementById('categories');
       grid.innerHTML = '';
-      Object.values(packs).forEach((p) => {
+      // Уровни сложности первыми: Бронза -> Серебро -> Золото
+      const order = ['bronze', 'silver', 'gold'];
+      const list = Object.values(packs);
+      list.sort((a, b) => {
+        const ia = order.indexOf(a.key), ib = order.indexOf(b.key);
+        if (ia >= 0 && ib >= 0) return ia - ib;
+        if (ia >= 0) return -1;
+        if (ib >= 0) return 1;
+        return 0;
+      });
+      list.forEach((p) => {
         const btn = document.createElement('button');
-        btn.className = 'cat-btn';
+        btn.className = 'cat-btn ' + levelClass(p.key);
         btn.innerHTML = `<span class="emoji">${p.emoji}</span>${p.title}`;
         btn.onclick = () => startQuiz(p.key);
         grid.appendChild(btn);
       });
     }
 
-    async function startQuiz(packKey) {
+    function startQuiz(packKey) {
       currentPack = packs[packKey];
-      currentQuestion = 0; score = 0; streak = 0; bestStreak = 0; correctCount = 0;
+      currentQuestion = 0;
+      score = 0;
+      streak = 0;
+      bestStreak = 0;
+      correctCount = 0;
       showScreen('quiz');
-      await loadQuestion();
+      loadQuestion();
     }
 
-    async function loadQuestion() {
+    // Перемешивание вариантов: правильный ответ не всегда на первом месте
+    function shuffled(q, seed) {
+      const opts = q.options.map((text, i) => ({ text, i }));
+      let s = (seed + 1) * 2654435761 % 2147483647;
+      if (s <= 0) s += 2147483646;
+      for (let i = opts.length - 1; i > 0; i--) {
+        s = (s * 16807) % 2147483647;
+        const j = s % (i + 1);
+        const t = opts[i]; opts[i] = opts[j]; opts[j] = t;
+      }
+      return opts;
+    }
+
+    function loadQuestion() {
       if (currentQuestion >= currentPack.questions.length) { showResult(); return; }
       const q = currentPack.questions[currentQuestion];
-      document.getElementById('qNum').textContent = `Вопрос ${currentQuestion + 1}/${currentPack.questions.length}`;
+      document.getElementById('qNum').innerHTML =
+        `<span>Вопрос ${currentQuestion + 1}/${currentPack.questions.length}</span>` +
+        `<span class="q-level" style="color:var(--${levelClass(currentPack.key) || 'purple'})">${currentPack.emoji} ${currentPack.title}</span>`;
       document.getElementById('qText').textContent = q.q;
       document.getElementById('fact').classList.remove('show');
+      document.getElementById('fact').textContent = '';
       document.getElementById('streakInfo').innerHTML = streak >= 2 ? `<span class="streak">🔥 Серия: ${streak}</span>` : '';
+      document.getElementById('prog').style.width = (currentQuestion / currentPack.questions.length * 100) + '%';
+
       const opts = document.getElementById('options');
       opts.innerHTML = '';
-      q.options.forEach((o, i) => {
+      const order = shuffled(q, currentQuestion);
+      q._order = order;
+      order.forEach((o, i) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
-        btn.textContent = o;
+        btn.textContent = o.text;
         btn.onclick = () => answer(i);
         opts.appendChild(btn);
       });
     }
 
-    async function answer(idx) {
+    function answer(idx) {
       const q = currentPack.questions[currentQuestion];
-      const picked = q.options[idx];
+      const picked = q._order[idx].text;
       const buttons = document.querySelectorAll('.option-btn');
       buttons.forEach((b) => b.classList.add('disabled'));
+
       const correct = picked.toLowerCase() === q.answer.toLowerCase();
       const gained = correct ? (streak >= 2 ? 3 : 2) : 0;
+
       buttons[idx].classList.add(correct ? 'correct' : 'wrong');
       if (!correct) {
-        const ci = q.options.findIndex((o) => o.toLowerCase() === q.answer.toLowerCase());
+        const ci = q._order.findIndex((o) => o.text.toLowerCase() === q.answer.toLowerCase());
         if (ci >= 0) buttons[ci].classList.add('correct');
       }
-      if (correct) { score += gained; streak += 1; correctCount += 1; bestStreak = Math.max(bestStreak, streak); }
-      else { streak = 0; }
-      document.getElementById('fact').textContent = '💡 ' + q.fact;
-      document.getElementById('fact').classList.add('show');
-      setTimeout(() => { currentQuestion += 1; loadQuestion(); }, 1200);
+
+      if (correct) {
+        score += gained;
+        streak += 1;
+        correctCount += 1;
+        bestStreak = Math.max(bestStreak, streak);
+      } else {
+        streak = 0;
+      }
+
+      tg.HapticFeedback?.impactOccurred('light');
+      const fact = document.getElementById('fact');
+      fact.textContent = '💡 ' + q.fact;
+      fact.classList.add('show');
+
+      setTimeout(() => {
+        currentQuestion += 1;
+        loadQuestion();
+      }, 1400);
     }
 
     function showResult() {
       const max = currentPack.questions.length * 3;
       const ratio = score / max;
-      const rank =
-        ratio >= 0.9 ? currentPack.ranks[0] :
-        ratio >= 0.7 ? currentPack.ranks[1] :
-        ratio >= 0.45 ? currentPack.ranks[2] :
-        ratio >= 0.2 ? currentPack.ranks[3] : currentPack.ranks[4];
-      document.getElementById('resultRank').textContent = `${rank.emoji} ${rank.title}`;
+      let medal, rankTitle;
+      if (ratio >= 0.9) { medal = '🥇'; rankTitle = 'Золото'; }
+      else if (ratio >= 0.7) { medal = '🥈'; rankTitle = 'Серебро'; }
+      else if (ratio >= 0.45) { medal = '🥉'; rankTitle = 'Бронза'; }
+      else if (ratio >= 0.2) { medal = '🌱'; rankTitle = 'Новичок'; }
+      else { medal = '💤'; rankTitle = 'Попробуй ещё'; }
+
+      document.getElementById('resultMedal').textContent = medal;
+      document.getElementById('resultRank').textContent = rankTitle;
       document.getElementById('resultScore').textContent = `${score} / ${max}`;
-      document.getElementById('resultStats').textContent = `Верно: ${correctCount}/${currentPack.questions.length} | Лучшая серия: ${bestStreak}`;
-      lastResult = { pack: currentPack.title, score, max, rank: rank.title };
-      const u = loadLocal(currentPack.key);
-      u.points = (u.points || 0) + score;
-      u.games = (u.games || 0) + 1;
-      u.bestStreak = Math.max(u.bestStreak || 0, bestStreak);
-      saveLocal(currentPack.key, u);
+      document.getElementById('resultStats').textContent =
+        `Верно: ${correctCount}/${currentPack.questions.length} • Лучшая серия: ${bestStreak}`;
+
+      const st = saveStat(currentPack.key, { score, best: bestStreak });
+      lastResult = { pack: currentPack.title, score, max, rank: rankTitle, total: st.points };
       showScreen('result');
     }
 
     function showStats() {
       showScreen('stats');
+      const el = document.getElementById('statsContent');
+      el.classList.remove('loading');
       let html = '';
-      const cats = [];
+      let any = false;
       Object.values(packs).forEach((p) => {
-        const u = loadLocal(p.key);
-        if (u.games > 0) cats.push({ ...p, ...u });
+        const s = loadStat(p.key);
+        if (s.games > 0) {
+          any = true;
+          const ratio = s.points / (s.games * 36);
+          const badge = ratio >= 0.7 ? 'gold' : ratio >= 0.45 ? 'silver' : 'bronze';
+          html += `<ul class="top-list"><li><span>${p.emoji} ${p.title}</span><span><span class="badge ${badge}">${ratio >= 0.7 ? '🥇' : ratio >= 0.45 ? '🥈' : '🥉'}</span> <b>${s.points}</b> очк. · ${s.games} игр</span></li></ul>`;
+        }
       });
-      if (cats.length) {
-        html += '<ul class="top-list">';
-        cats.forEach((c) => { html += `<li><span>${c.emoji} ${c.title}</span><span><b>${c.points||0}</b> очк. (${c.games||0} игр)</span></li>`; });
-        html += '</ul>';
-      } else {
-        html = '<p style="color:var(--hint)">Ещё не играли. Начните квиз!</p>';
-      }
-      document.getElementById('statsContent').innerHTML = html;
+      el.innerHTML = any ? html : '<p style="color:var(--hint)">Ещё не играли. Начните квиз!</p>';
     }
 
     function shareResult() {
       if (!lastResult) return;
-      const text = `Я набрал ${lastResult.score} очк. в квизе «${lastResult.pack}» — ${lastResult.rank}! Попробуй и ты:`;
-      const url = tg?.initDataUnsafe?.start_param ? '' : window.location.href;
-      if (tg) tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text));
-      else if (navigator.share) navigator.share({ title: 'Quiz Universe', text, url }).catch(()=>{});
-      else alert(text);
+      const text = `Я набрал ${lastResult.score} очк. в квизе «${lastResult.pack}» — ${lastResult.rank}! Сыграй и ты:`;
+      const url = 'https://lipton9448.github.io/quiz-universe-bot/';
+      try {
+        tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text));
+      } catch (e) {
+        if (navigator.share) navigator.share({ title: 'Quiz Universe', text, url });
+        else alert(text);
+      }
     }
 
     function goHome() { showScreen('home'); }
-    function showScreen(name) { document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active')); document.getElementById(name).classList.add('active'); }
+    function showScreen(name) {
+      document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
+      document.getElementById(name).classList.add('active');
+    }
+
     loadPacks();
   </script>
 </body>

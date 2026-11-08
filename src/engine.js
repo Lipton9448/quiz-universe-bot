@@ -18,6 +18,28 @@ function esc(text) {
   return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+// Shuffle options deterministically per question so the correct answer
+// is not always in the same slot for the user.
+function shuffledOptions(q, seed) {
+  const opts = q.options.map((text, i) => ({ text, i }));
+  let s = seed * 2654435761 % 2147483647;
+  if (s <= 0) s += 2147483646;
+  for (let i = opts.length - 1; i > 0; i--) {
+    s = (s * 16807) % 2147483647;
+    const j = s % (i + 1);
+    const tmp = opts[i];
+    opts[i] = opts[j];
+    opts[j] = tmp;
+  }
+  return opts;
+}
+
+function miniAppRow() {
+  const url = process.env.MINIAPP_URL;
+  if (!url) return null;
+  return [{ text: '📱 Открыть Mini App', web_app: { url } }];
+}
+
 function categoriesGrid() {
   const keys = Object.keys(packs);
   const rows = [];
@@ -31,21 +53,38 @@ function categoriesGrid() {
     }
     rows.push(row);
   }
-  rows.push([{ text: '📱 Открыть Mini App', web_app: { url: process.env.MINIAPP_URL || 'https://example.com' } }]);
+  const mrow = miniAppRow();
+  if (mrow) rows.push(mrow);
   return rows;
 }
 
 function mainMenu() {
-  return {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: '🎮 Выбрать квиз', callback_data: 'menu:categories' }],
-        [{ text: '🏆 Рейтинг', callback_data: 'menu:top' }],
-        [{ text: '📊 Моя статистика', callback_data: 'menu:stats' }],
-        [{ text: '📱 Открыть Mini App', web_app: { url: process.env.MINIAPP_URL || 'https://example.com' } }]
-      ]
-    }
+  const rows = [
+    [{ text: '🎮 Выбрать квиз', callback_data: 'menu:categories' }],
+    [{ text: '🏆 Рейтинг', callback_data: 'menu:top' }, { text: '📊 Моя статистика', callback_data: 'menu:stats' }]
+  ];
+  const mrow = miniAppRow();
+  if (mrow) rows.push(mrow);
+  return { reply_markup: { inline_keyboard: rows } };
+}
+
+// Reply keyboard under the message input: quick access buttons +
+// a Mini App button that opens the web app straight away.
+function replyKeyboard() {
+  const url = process.env.MINIAPP_URL;
+  const k = {
+    keyboard: [
+      [{ text: '📱 Mini App', web_app: { url: url || 'https://example.com' } }, { text: '🎮 Категории' }],
+      [{ text: '🏆 Рейтинг' }, { text: '📊 Статистика' }],
+      [{ text: '❓ Помощь' }]
+    ],
+    resize_keyboard: true,
+    is_persistent: true
   };
+  if (!url) {
+    k.keyboard[0] = [{ text: '🎮 Категории' }, { text: '❓ Помощь' }];
+  }
+  return k;
 }
 
 function send(bot, chatId, text, extra) {
@@ -93,7 +132,8 @@ function startQuiz(bot, chatId, from, packKey) {
       `❓ Вопросов: ${pack.questions.length}\n` +
       `⭐ За верный ответ: ${POINTS} очка\n` +
       `🔥 Серия из ${STREAK_FOR_BONUS} подряд: бонус\n\n` +
-      `Погнали!`
+      `Погнали!`,
+    { reply_markup: replyKeyboard() }
   );
   setTimeout(() => askQuestion(bot, chatId, from.id), 600);
 }
@@ -109,8 +149,11 @@ function askQuestion(bot, chatId, userId) {
   let text = `❓ <b>Вопрос ${s.index + 1}/${pack.questions.length}</b>\n\n${esc(q.q)}`;
   if (s.streak >= 2) text += `\n\n🔥 Серия: ${s.streak} подряд!`;
 
-  const buttons = q.options.map((o, i) => [
-    { text: o, callback_data: `a:${s.index}:${i}` }
+  // Answer options are shown in random order: correct answer not always first.
+  const opts = shuffledOptions(q, s.index + 1);
+  s.currentOrder = opts;
+  const buttons = opts.map((o, i) => [
+    { text: o.text, callback_data: `a:${s.index}:${i}` }
   ]);
   send(bot, chatId, text, { reply_markup: { inline_keyboard: buttons } });
 }
@@ -175,16 +218,15 @@ async function runBot(env) {
   });
 
   bot.onText(/\/start/, (msg) => {
-    const u = store(msg.from).get();
     send(
       bot,
       msg.chat.id,
       `🧠 <b>Quiz Universe Bot</b>\n\n` +
-        `20 квизов по вселенным Marvel, DC и Аниме — всё в одном боте!\n\n` +
+        `Квизы по вселенным Marvel, DC и Аниме — всё в одном боте!\n\n` +
         `🎮 Выбери категорию и играй.\n` +
-        `🏆 Соревнуйся в рейтинге.\n` +
-        `📱 Или открой Mini App для красивого интерфейса.`,
-      mainMenu()
+        `🥉🥈🥇 Уровни: Бронза → Серебро → Золото — с каждым сложнее!\n` +
+        `📱 Кнопка «Mini App» под строкой ввода — быстрый доступ.`,
+      { reply_markup: replyKeyboard() }
     );
   });
 
@@ -228,10 +270,66 @@ async function runBot(env) {
         `2. Отвечай на 12 вопросов\n` +
         `3. За правильный ответ — 2 очка, серия из 3 — бонус (+3)\n` +
         `4. В конце — твой ранг и место в рейтинге\n\n` +
-        `📱 Mini App — красивый интерфейс внутри Telegram\n` +
+        `🥉🥈🥇 Уровни: Бронза → Серебро → Золото (вопросы сложнее)\n` +
+        `📱 Mini App — квадратик слева от поля ввода\n` +
         `🏆 /top — рейтинг по текущей категории\n` +
         `📊 /stats — твоя статистика`
     );
+  });
+
+  bot.on('message', (msg) => {
+    if (!msg.text || msg.text.startsWith('/')) return;
+    const chatId = msg.chat.id;
+    const text = msg.text.trim().toLowerCase();
+
+    if (text === '🏆 рейтинг' || text === 'рейтинг') {
+      const cat = userCategory.get(msg.from.id);
+      if (cat && packs[cat]) {
+        const d = store(msg.from, cat).getData();
+        send(bot, chatId, `🏆 <b>${esc(packs[cat].title)}</b>\n\n${leaderboard.leaderboardText(d, TOPN)}`);
+      } else {
+        send(bot, chatId, 'Сначала выбери категорию через /quiz');
+      }
+      return;
+    }
+
+    if (text === '📊 статистика' || text === 'статистика') {
+      const cat = userCategory.get(msg.from.id);
+      const globalData = store(msg.from, 'global').getData();
+      let out = `📊 <b>Твоя статистика</b>\n\n`;
+      if (cat && packs[cat]) {
+        const u = store(msg.from, cat).get();
+        out += `🎮 ${packs[cat].emoji} ${esc(packs[cat].title)}\n⭐ ${u.points || 0} очк. | 🎮 ${u.games || 0} игр | 🔥 ${u.best_streak || 0}\n\n`;
+      }
+      out += `Всего игр: ${Object.values(globalData).reduce((a, u) => a + (u.games || 0), 0)}`;
+      send(bot, chatId, out);
+      return;
+    }
+
+    if (text === '🎮 категории' || text === 'категории' || text === '🎮 квиз') {
+      send(bot, chatId, 'Выбери вселенную:', { reply_markup: { inline_keyboard: categoriesGrid() } });
+      return;
+    }
+
+    if (text === '❓ помощь' || text === 'помощь') {
+      send(
+        bot,
+        chatId,
+        `❓ /quiz — категории\n/top — рейтинг\n/stats — статистика\n\n` +
+          `🥉 Бронза → 🥈 Серебро → 🥇 Золото — с каждым уровнем сложнее!`
+      );
+      return;
+    }
+
+    if (text === '📱 mini app' || text === 'mini app') {
+      const url = process.env.MINIAPP_URL;
+      if (url) {
+        send(bot, chatId, '📱 Открываю Mini App...', {
+          reply_markup: { inline_keyboard: [[{ text: '📱 Открыть', web_app: { url } }]] }
+        });
+      }
+      return;
+    }
   });
 
   bot.on('callback_query', (cq) => {
@@ -288,7 +386,9 @@ async function runBot(env) {
       }
 
       const q = pack.questions[s.index];
-      const picked = q.options[Number(optStr)];
+      const order = s.currentOrder || q.options.map((text, i) => ({ text, i }));
+      const pickedEntry = order[Number(optStr)];
+      const picked = pickedEntry ? pickedEntry.text : undefined;
       const correct = picked !== undefined && checkAnswer(q.answer, picked);
       const gained = correct ? pointsFor(s) : 0;
 
@@ -303,7 +403,8 @@ async function runBot(env) {
         text = `✅ <b>Верно!</b> ${esc(picked)}\n+${gained} очк.${s.streak >= STREAK_FOR_BONUS ? ' (бонус 🔥)' : ''}\n\n💡 ${esc(q.fact)}`;
       } else {
         s.streak = 0;
-        text = `❌ <b>Правильно:</b> ${esc(q.answer)}\n\n💡 ${esc(q.fact)}`;
+        const correctEntry = order.find((o) => checkAnswer(q.answer, o.text));
+        text = `❌ <b>Правильно:</b> ${esc(correctEntry ? correctEntry.text : q.answer)}\n\n💡 ${esc(q.fact)}`;
       }
 
       s.index += 1;
